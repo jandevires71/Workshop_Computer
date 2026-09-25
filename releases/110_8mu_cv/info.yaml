@@ -3,11 +3,12 @@ Name: 8mu CV
 short-description: A Music Thing 8mu as four bipolar voltages and two rate-controlled square pulses, over USB MIDI Host
 Language: C++ (Pico SDK + ComputerCard)
 Creator: Your Name
-Version: "1.0.0"
+Version: "1.1.0"
 Status: Beta
 License: MIT
 Editor: none
 date-created: 2026-09-25
+date-updated: 2026-09-25
 
 # Vendors, unmodified and under their own MIT terms:
 #   ComputerCard.h
@@ -18,7 +19,7 @@ date-created: 2026-09-25
 
 uf2:
   - path: UF2/8mu_cv.uf2
-    name: 8mu CV 1.0.0
+    name: 8mu CV 1.1.0
 
 tags:
   - midi-host
@@ -27,25 +28,29 @@ tags:
   - lfo
 
 summary: |
-  Plug a Music Thing 8mu into the Computer's front USB-C jack and its six
-  lefthand faders become four control voltages and two square-wave pulse
-  streams. The audio outputs are DC-coupled, so they carry steady voltages
-  just as well as sound, giving four bipolar voltage sources rather than the
-  usual two.<br><br>
+  Plug a Music Thing 8mu into the Computer's front USB-C jack and its eight
+  lefthand faders become four control voltages and two pulse streams. The
+  audio outputs are DC-coupled, so they carry steady voltages just as well as
+  sound, giving four bipolar voltage sources rather than the usual two.<br><br>
 
   Faders 1-4 set the levels of Audio Out 1, Audio Out 2, CV Out 1 and CV Out
   2, each running from about -5V at the bottom through 0V in the middle to
   about +5V at the top. Faders 5 and 6 set the rates of Pulse Out 1 and Pulse
-  Out 2: independent 50% square waves from 0.1Hz to 20Hz, exponential across
-  the fader so equal movements multiply the rate. At the bottom they are slow
-  enough to use as an LFO, at the top they are a fast rhythmic gate.<br><br>
+  Out 2: independent pulses from 0.1Hz to 20Hz, exponential across the fader
+  so equal movements multiply the rate. At the bottom they are slow enough to
+  use as an LFO, at the top they are a fast rhythmic gate. Faders 7 and 8 set
+  their widths: the middle is a 50% square, the way down narrows toward a
+  sharp trigger, the way up widens toward a gate that stays open nearly all
+  the time. The width never quite reaches zero or full, so a pulse is always
+  produced.<br><br>
 
   No controller is needed to play it. With no 8mu attached the three panel
   knobs take over in two pages selected by the switch: middle gives Audio Out
   1, Audio Out 2 and CV Out 1, and up gives CV Out 2 and the two pulse rates.
-  The 8mu always wins while it is connected, so the panel and controller can
-  never fight over a parameter, and unplugging it hands control back without
-  a jump.<br><br>
+  The two pulse widths are reachable only from the 8mu, so without a
+  controller they stay at a plain 50% square. The 8mu always wins while it is
+  connected, so the panel and controller can never fight over a parameter, and
+  unplugging it hands control back without a jump.<br><br>
 
   The card is a pure MIDI listener: it never writes to the 8mu's LEDs or
   settings, so the controller behaves exactly as it does anywhere else. It
@@ -78,13 +83,15 @@ panel:
       name: Pulse 1
       type: pulse
       description: >
-        50% duty square wave, rate set by fader 5, 0.1Hz to 20Hz with an
-        exponential response. A slow LFO at the bottom of the fader, a fast
-        rhythmic gate at the top.
+        Rate set by fader 5, 0.1Hz to 20Hz with an exponential response - a
+        slow LFO at the bottom of the fader, a fast rhythmic gate at the top.
+        Width set by fader 7: centre is a 50% square, down narrows toward a
+        sharp trigger, up widens toward a gate. Always a pulse, never dead.
     - id: PulseOut2
       name: Pulse 2
       type: pulse
-      description: 50% duty square wave, rate set by fader 6, independent of Pulse 1.
+      description: >
+        Rate set by fader 6 and width by fader 8, independent of Pulse 1.
 
 controls:
   switch:

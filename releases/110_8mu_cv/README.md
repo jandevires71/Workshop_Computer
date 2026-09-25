@@ -3,7 +3,7 @@
 *A Music Thing [8mu](https://www.musicthing.co.uk/8mu.html) as four voltages and two pulses.*
 
 A program card for the Music Thing Modular Workshop System Computer. Plug an
-8mu into the Computer's front USB-C jack and its six lefthand faders become:
+8mu into the Computer's front USB-C jack and its eight lefthand faders become:
 
 | 8mu control | Jack | What it does |
 |---|---|---|
@@ -11,8 +11,10 @@ A program card for the Music Thing Modular Workshop System Computer. Plug an
 | **Fader 2** | Audio Out 2 | Voltage, centre = 0V |
 | **Fader 3** | CV Out 1 | Voltage, centre = 0V |
 | **Fader 4** | CV Out 2 | Voltage, centre = 0V |
-| **Fader 5** | Pulse Out 1 | Square wave rate, 0.1Hz to 20Hz |
-| **Fader 6** | Pulse Out 2 | Square wave rate, 0.1Hz to 20Hz |
+| **Fader 5** | Pulse Out 1 | Rate, 0.1Hz to 20Hz |
+| **Fader 6** | Pulse Out 2 | Rate, 0.1Hz to 20Hz |
+| **Fader 7** | Pulse Out 1 | Width, centre is a 50% square |
+| **Fader 8** | Pulse Out 2 | Width, centre is a 50% square |
 
 The audio outputs are DC-coupled on this hardware, so they carry a steady
 voltage just as well as sound does. That is what makes four voltage outputs
@@ -32,14 +34,34 @@ a manual voltage source you can dial in by hand.
 
 ## The pulses
 
-Pulse Out 1 and Pulse Out 2 are independent square waves with a fixed 50%
-duty cycle. Fader 5 and fader 6 set their rates between 0.1Hz and 20Hz, with
-an exponential response so that equal movements of the fader multiply the rate
-by the same amount. That matches the way speed is heard: the bottom of the
-fader is a slow blink, the top is a fast pulse.
+Pulse Out 1 and Pulse Out 2 are independent pulse streams. Fader 5 and fader 6
+set their rates between 0.1Hz and 20Hz, with an exponential response so that
+equal movements of the fader multiply the rate by the same amount. That matches
+the way speed is heard: the bottom of the fader is a slow blink, the top is a
+fast pulse.
+
+Fader 7 and fader 8 set their **width** - how much of each cycle the output
+stays high. The middle of the fader is a 50% square, the way up widens it and
+the way down narrows it:
+
+| Fader 7 / 8 | Duty | What it is good for |
+|---|---|---|
+| Bottom (~2%) | very narrow | a sharp trigger or clock edge |
+| Middle (50%) | square | the classic LFO / gate shape |
+| Top (~98%) | very wide | a gate that holds a note or envelope open nearly all the time |
+
+The width never quite reaches zero or full, so there is always a pulse being
+produced and never a dead or stuck output. Like the voltages, the width is
+smoothed slightly, so sweeping the fader does not stretch a single pulse as it
+passes.
+
+Width is reachable only from the 8mu: the panel has six control slots and the
+card has eight parameters. Without a controller both widths stay at a plain
+50% square.
 
 Patch them into clocks, triggers, gates, or anything that wants a rhythmic
-on/off. At the bottom they are slow enough to use as an LFO.
+on/off. At the bottom they are slow enough to use as an LFO; widen the pulses
+for trigger duties and narrow-shape them into gate streams.
 
 ## Playing it without a controller
 
@@ -53,7 +75,8 @@ by the switch:
 
 The 8mu always wins while it is connected, so the panel and the controller can
 never fight over a parameter. Unplug it and the knobs pick up from wherever
-the faders last left things, rather than jumping.
+the faders last left things, rather than jumping. The two pulse widths are not
+on the panel, so they stay at 50% while no controller is attached.
 
 ## Panel LEDs
 
