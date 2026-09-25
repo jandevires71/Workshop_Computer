@@ -20,43 +20,47 @@
 // reference, and the two audio outs could never be calibrated anyway.  The
 // useful range is roughly -5V to +5V, with the middle of a fader at 0V.
 //
-// Any of the four voltage outputs can also be a triangle LFO instead of a
-// steady voltage.  A short press on one of the 8mu's four top buttons turns
-// that output's LFO on or off.  Switching one on captures the voltage it was
-// already sitting at and oscillates around it, and the fader that was setting
-// the level now sets the speed.  The triangle always reaches whichever supply
-// rail is nearer, so a voltage set close to a rail simply moves less - it can
-// never clip.  Switching it off glides back to the captured voltage, and the
-// fader only takes the level over again once it has been moved to match, so
-// nothing jumps.
+// THE COMPUTER'S SWITCH PICKS THE MODE.  The 8mu's faders are the only thing
+// that sets the eight parameters - the three panel knobs are deliberately not
+// a fallback, because this card exists to drive the 8mu's controls rather
+// than to imitate them.
 //
-//   button 1 (C2)  ->  Audio Out 1   LFO on/off
-//   button 2 (C3)  ->  Audio Out 2   LFO on/off
-//   button 3 (C4)  ->  CV Out 1      LFO on/off
-//   button 4 (C5)  ->  CV Out 2      LFO on/off
+//   switch middle  BASIC   faders 1-4 are steady voltages, 5-8 pulse rate/width
+//   switch up      LFO     armed outputs oscillate (see below)
+//   switch down    BASIC   and, held, it re-takes the four LFO centres from
+//                          the faders - the way to move a centre by hand
 //
-// Holding any one of those buttons for a second and a half stops all four
-// LFOs at once.  That is the way out when the card is run without the
-// controller: the LFO on/off state is deliberately kept when the 8mu is
-// unplugged, so without it a card left in LFO mode would have no way back.
+// Any of the four voltage outputs can be a triangle LFO instead of a steady
+// voltage.  A short press on one of the 8mu's four top buttons arms that
+// output; it oscillates whenever the switch is Up.  Arming captures the
+// voltage it is already sitting at as the centre to swing around, and while
+// it is oscillating the fader that set the level instead sets the speed.  You
+// can arm in BASIC and flip Up to hear it.
 //
-// Play it without a controller too.  With no 8mu plugged in the three panel
-// knobs take over, in two pages selected by the switch:
+//   button 1 (C2)  ->  Audio Out 1   LFO arm
+//   button 2 (C3)  ->  Audio Out 2   LFO arm
+//   button 3 (C4)  ->  CV Out 1      LFO arm
+//   button 4 (C5)  ->  CV Out 2      LFO arm
 //
-//   switch middle:  Main = Audio 1,  X = Audio 2,  Y = CV 1
-//   switch up:      Main = CV 2,     X = Pulse 1,  Y = Pulse 2
+// A fader whose output is NOT armed is still a level even in LFO mode, so the
+// card stays useful with only one LFO running - or none.
 //
-// The panel has exactly six slots and the card has eight parameters, so pulse
-// width is reachable only from the 8mu: with no controller those two stay at
-// a 50% square, which is what the card did before faders 7 and 8 existed.
+// The Main knob sets how far the triangle swings: fully anticlockwise is no
+// swing, fully clockwise is the whole distance to the nearer supply rail.  A
+// swing never reaches past that rail, so an LFO can never clip however the
+// centre and depth are set.  Main only affects armed outputs.
 //
-// The 8mu wins whenever it is connected, so the panel cannot fight it for a
-// parameter.  Unplug the controller and the knobs pick up from where the
-// faders last left things, rather than jumping.
+// Switching an LFO off - by pressing its button again, or by dropping back to
+// BASIC - glides the output to its centre and leaves the level held until the
+// fader is moved to meet it, so nothing jumps.
 //
-// The 8mu is used purely as a MIDI source: this card never talks to its
-// LEDs.  Plug it into the Computer's front USB-C jack, which needs a Rev 1.1+
-// board and nothing else in that socket.  The Computer is the USB host.
+// Holding any one of the four buttons for a second and a half disarms all of
+// them at once: the quick way to stop everything.
+//
+// The 8mu is used purely as a MIDI source: this card never talks to its LEDs.
+// Plug it into the Computer's front USB-C jack, which needs a Rev 1.1+ board
+// and nothing else in that socket.  The Computer is the USB host.  Unplug the
+// controller and the outputs simply hold their last values.
 
 #include "ComputerCard.h"
 #include "EightMU.h"
@@ -90,14 +94,11 @@ public:
 
 	virtual void ProcessSample()
 	{
-		// --- where do the eight parameters come from this sample? -----------
+		// --- the eight parameters, from the 8mu and nowhere else ------------
 		//
-		// The 8mu takes priority whenever it is mounted.  Without one, the
-		// panel's two pages fill in whichever three parameters they cover;
-		// the rest hold their last value, so nothing drops out when the
-		// switch moves.  The two pulse widths are never on the panel, so
-		// without a controller they stay where they were initialised: a
-		// plain 50% square.
+		// There is deliberately no panel fallback: this card is a test bed
+		// for the 8mu, so with no controller attached the outputs hold their
+		// last values rather than being driven by three knobs.
 		if (mu.Connected())
 		{
 			for (int i = 0; i < 8; i++)
@@ -105,32 +106,46 @@ public:
 				param[i] = mu.Fader(i);
 			}
 		}
-		else if (SwitchVal() == Switch::Up)
+
+		// --- mode, from the Computer's switch -------------------------------
+		//
+		// Middle and Down are the basic card; Up is the LFO card.  Down is
+		// momentary, and while it is held it re-takes the four LFO centres
+		// from the fader levels, which is how a centre is moved by hand.
+		//
+		// The switch is spring-loaded downward, but reading it every sample
+		// rather than on an edge means a held Down keeps re-capturing, which
+		// is both simpler and does no harm - the captured value stops
+		// changing once the fader does.
+		const Switch sw = SwitchVal();
+		const bool lfoMode = (sw == Switch::Up);
+
+		if (sw == Switch::Down)
 		{
-			param[3] = KnobVal(Knob::Main);   // CV 2
-			param[4] = KnobVal(Knob::X);      // Pulse 1 rate
-			param[5] = KnobVal(Knob::Y);      // Pulse 2 rate
-		}
-		else
-		{
-			param[0] = KnobVal(Knob::Main);   // Audio 1
-			param[1] = KnobVal(Knob::X);      // Audio 2
-			param[2] = KnobVal(Knob::Y);      // CV 1
+			for (int i = 0; i < 4; i++)
+			{
+				int32_t c = param[i] - 2048;
+				if (c < -2048) c = -2048;
+				if (c > 2047) c = 2047;
+				centre[i] = c;
+
+				// Re-capturing is a deliberate reset, so the fader takes the
+				// level straight back rather than waiting to be picked up.
+				levelLocked[i] = false;
+				pickupPos[i] = ClampFader(c + 2048);
+			}
 		}
 
-		// --- the four top buttons switch the LFOs ---------------------------
+		// --- the four top buttons arm the LFOs ------------------------------
 		//
-		// A short tap toggles that output between a steady voltage and a
-		// triangle LFO.  A long hold on any one button stops all four LFOs at
-		// once, which is the only way back if the controller has since been
-		// unplugged - the on/off state is deliberately kept across a
-		// disconnect, so an accidental LFO would otherwise be stuck on.
+		// A short tap arms or disarms that output.  A long hold on any one
+		// button disarms all four at once.
 		//
 		// A button held down and then unplugged must NOT read as a tap when
 		// the connection drops: EightMU clears its button states on
-		// disconnect, and a release edge there would flip the LFO as a side
-		// effect of pulling the cable.  So button edges are only acted on
-		// while a controller is actually connected.
+		// disconnect, and a release edge there would flip the arming as a side
+		// effect of pulling the cable.  So edges are only acted on while a
+		// controller is actually connected.
 		if (mu.Connected())
 		{
 			for (int i = 0; i < 4; i++)
@@ -142,16 +157,16 @@ public:
 					if (heldSamples[i] < kLongHoldSamples) heldSamples[i]++;
 					else if (!longFired[i])
 					{
-						// Held long enough: stop everything.  Only fires once
+						// Held long enough: disarm everything.  Only fires once
 						// per hold.
-						for (int j = 0; j < 4; j++) SetLfo(j, false);
+						for (int j = 0; j < 4; j++) SetArmed(j, false);
 						longFired[i] = true;
 					}
 				}
 				else if (prevDown[i] && !longFired[i])
 				{
 					// Released before the long-hold threshold: a normal tap.
-					SetLfo(i, !lfoOn[i]);
+					SetArmed(i, !lfoArmed[i]);
 				}
 
 				if (down) prevDown[i] = true;
@@ -168,49 +183,59 @@ public:
 			}
 		}
 
-		// --- four voltages, each steady or a triangle LFO -------------------
+		// --- four voltages, steady or oscillating ---------------------------
 		//
-		// In steady mode a fader is a level: faders and knobs both rest near
-		// 2048 at their centre (a fader sends CC 64 there), so subtracting
-		// 2048 turns a position into a bipolar voltage with 0V in the middle.
+		// An output oscillates only when it is armed AND the switch is Up.
+		// Otherwise it is a steady level, whether because it was never armed
+		// or because the switch has been dropped back to basic - and a fader
+		// only sets a rate while its output is actually oscillating.
 		//
-		// In LFO mode the same fader sets how fast the triangle runs, and the
-		// voltage it was sitting at when the LFO was switched on becomes the
-		// centre the triangle swings around.
-		//
-		// Either way the target is slewed gently, which hides the steps in the
-		// 7-bit MIDI fader, glides every switch-on and switch-off rather than
-		// jumping, and rounds the corners off the triangle.  At the top of the
-		// speed range that rounding is a fair fraction of a cycle, so a fast
-		// LFO comes out closer to a sine than a triangle - a mellowing that
-		// suits modulation sources, and the price of not clicking.
+		// The target is slewed gently throughout, which hides the steps in
+		// the 7-bit MIDI fader, glides every switch-on and switch-off rather
+		// than jumping, and rounds the corners off the triangle.  At the top
+		// of the speed range that rounding is a fair fraction of a cycle, so
+		// a fast LFO comes out closer to a sine than a triangle - a mellowing
+		// that suits modulation sources, and the price of not clicking.
+		const int32_t depth = KnobVal(Knob::Main) + 1;   // 1..4096, so full = full headroom
 		for (int i = 0; i < 4; i++)
 		{
+			const bool active = lfoMode && lfoArmed[i];
+
+			// An output that has just stopped oscillating must be locked at
+			// once, or the fader - still sitting at a rate position - would
+			// grab the level in the same sample and the output would jump.
+			if (!active && prevActive[i])
+			{
+				levelLocked[i] = true;
+				pickupPos[i] = ClampFader(centre[i] + 2048);
+			}
+			prevActive[i] = active;
+
 			int32_t target;
 
-			if (lfoOn[i])
+			if (active)
 			{
 				lfoPhase[i] += rateInc[param[i] >> 5];
 
-				// Swing the full distance to whichever rail is nearer, so the
-				// shape scales itself down as the centre approaches a rail and
-				// the output can never clip.  The triangle runs 0 to 65535, so
-				// 32768 is the centre and each half is scaled separately to
-				// keep every shift operand positive.
+				// The swing is the distance to whichever supply rail is
+				// nearer, reduced by the depth knob.  The triangle runs 0 to
+				// 65535, so 32768 is the centre and each half is scaled
+				// separately to keep every shift operand positive.
 				const int32_t headroom = Min(centre[i] + 2048, 2047 - centre[i]);
+				const int32_t scaled = (headroom * depth) >> 12;
 				const int32_t tri = (int32_t)Triangle(lfoPhase[i]);
 				int32_t offset;
-				if (tri < 32768) offset = -(((32768 - tri) * headroom) >> 15);
-				else             offset =  (((tri - 32768) * headroom) >> 15);
+				if (tri < 32768) offset = -(((32768 - tri) * scaled) >> 15);
+				else             offset =  (((tri - 32768) * scaled) >> 15);
 				target = centre[i] + offset;
 			}
 			else if (levelLocked[i])
 			{
-				// LFO just switched off: hold the captured voltage until the
-				// fader has been moved to meet it, so taking the level back
-				// over does not jump.  Pick-up is a crossing test: the fader
-				// takes control the moment it reaches or passes the captured
-				// position from either side.
+				// Just stopped oscillating: hold the captured voltage until
+				// the fader has been moved to meet it, so taking the level
+				// back over does not jump.  Pick-up is a crossing test: the
+				// fader takes control the moment it reaches or passes the
+				// captured position from either side.
 				target = centre[i];
 				if ((prevParam[i] < pickupPos[i] && param[i] >= pickupPos[i]) ||
 					(prevParam[i] > pickupPos[i] && param[i] <= pickupPos[i]) ||
@@ -277,14 +302,14 @@ public:
 		// --- panel feedback -------------------------------------------------
 		//
 		// LED 1 and LED 5 show the Audio Out 1 and CV Out 1 levels as a steady
-		// brightness, which is enough to read the fader position at a glance.
-		// The other two voltage outs have no LEDs to spare, but they follow
-		// the same faders, so the panel is still a fair picture.
-		LedOn(0, mu.Connected());                                   // controller mounted
+		// brightness, which is enough to read where those outputs are.  LED 4
+		// shows the mode the switch has selected, so an LFO left armed is not
+		// silently waiting to swing the moment the switch goes Up.
+		LedOn(0, mu.Connected());                               // controller mounted
 		LedBrightness(1, LevelLed(levelQ8[0]));
-		LedOn(2, pulseHigh[0]);                                     // pulse 1 following
-		LedOn(3, pulseHigh[1]);                                     // pulse 2 following
-		LedOn(4, !mu.Connected() && SwitchVal() == Switch::Up);     // panel page 2
+		LedOn(2, pulseHigh[0]);                                 // pulse 1 following
+		LedOn(3, pulseHigh[1]);                                 // pulse 2 following
+		LedOn(4, lfoMode);                                      // switch Up = LFO mode
 		LedBrightness(5, LevelLed(levelQ8[2]));
 	}
 
@@ -300,10 +325,11 @@ private:
 	// hears speed, rather than adding a fixed number of Hz.
 	int32_t rateInc[kRateSteps];
 
-	// Panel/8mu position for each parameter (0-4095), remembered across
-	// samples so the two panel pages can each own half of the parameters.
-	// The last two are the pulse widths, which only the 8mu can reach; they
-	// start at 2048 so a controllerless card boots to a 50% square.
+	// The 8mu fader positions for the eight parameters (0-4064), remembered
+	// across samples so the outputs hold when the controller is unplugged.
+	// The initial values give a quiet, centred card before anything is moved:
+	// 0V on all four outputs and the slowest pulse rate, with the widths at a
+	// plain 50% square.
 	int32_t param[8] = {2048, 2048, 2048, 2048, 0, 0, 2048, 2048};
 
 	// Smoothed voltage outputs, Q8 (-2048<<8 to 2047<<8).
@@ -323,13 +349,14 @@ private:
 	//
 	// These live in the card, not in the controller, so they survive an 8mu
 	// being unplugged mid-performance - see the header comment.
-	bool lfoOn[4] = {false, false, false, false};   // latched LFO on/off
+	bool lfoArmed[4] = {false, false, false, false};  // armed to oscillate in LFO mode
+	bool prevActive[4] = {false, false, false, false}; // last sample's arm+mode result
 	int32_t centre[4] = {0, 0, 0, 0};               // voltage the LFO swings around
 	uint32_t lfoPhase[4] = {0, 0, 0, 0};            // triangle phase accumulators
 
-	// Switching an LFO off must not make the output jump to wherever the
-	// fader happens to be (it was setting the rate, not the level), so the
-	// held voltage stays put until the fader is moved to meet it.
+	// When an output stops oscillating its fader is sitting at a rate, not a
+	// level, so the output holds its centre until the fader is moved to meet
+	// it - otherwise the level would jump to wherever the rate fader was.
 	bool levelLocked[4] = {false, false, false, false};
 	int32_t pickupPos[4] = {0, 0, 0, 0};            // fader value that takes control back
 	int32_t prevParam[4] = {2048, 2048, 2048, 2048};
@@ -345,14 +372,14 @@ private:
 
 	EightMU mu;
 
-	// Flip one output between a steady voltage and a triangle LFO.  Switching
-	// on captures the voltage it is already sitting at as the centre the
-	// triangle will swing around; switching off leaves the level held until
-	// the fader is moved to match (see the pick-up test in ProcessSample).
-	void SetLfo(int i, bool on)
+	// Arm or disarm one output.  Arming captures the voltage it is already
+	// sitting at as the centre the triangle will swing around; disarming is
+	// handled by the active-to-inactive edge in ProcessSample, which is the
+	// only place that knows whether the output was actually oscillating.
+	void SetArmed(int i, bool on)
 	{
-		if (on == lfoOn[i]) return;
-		lfoOn[i] = on;
+		if (on == lfoArmed[i]) return;
+		lfoArmed[i] = on;
 
 		if (on)
 		{
@@ -364,20 +391,24 @@ private:
 			// crossing: the output is already at the centre, so switching on
 			// does not first lunge to the bottom of the swing.
 			lfoPhase[i] = 0x40000000u;
-			levelLocked[i] = false;
 		}
-		else
-		{
-			levelLocked[i] = true;
-		}
+		// levelLocked is deliberately left alone.  If the output was already
+		// holding its centre because its fader is still away at a rate
+		// position, arming again in basic mode must keep holding it, or the
+		// level would jump the moment the button is pressed.
 
-		// The fader value whose voltage equals the captured centre.  Clamped
-		// to the range a fader can actually reach (0-4064), because a centre
-		// near a rail would otherwise sit at 4095 - a value no fader can
-		// reach, leaving the level locked for ever.
-		pickupPos[i] = centre[i] + 2048;
-		if (pickupPos[i] < 0) pickupPos[i] = 0;
-		if (pickupPos[i] > 4064) pickupPos[i] = 4064;
+		pickupPos[i] = ClampFader(centre[i] + 2048);
+	}
+
+	// The fader value whose voltage equals a given centre, clamped to the range
+	// a fader can actually reach (0-4064).  Without the clamp a centre near a
+	// rail would sit at 4095, a value no fader can reach, leaving the level
+	// locked for ever.
+	static int32_t ClampFader(int32_t v)
+	{
+		if (v < 0) v = 0;
+		if (v > 4064) v = 4064;
+		return v;
 	}
 
 	// Triangle wave from a 32-bit phase: 0 at the start of the cycle, 65535 at

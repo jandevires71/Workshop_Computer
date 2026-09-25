@@ -16,16 +16,37 @@ four top buttons become:
 | **Fader 6** | Pulse Out 2 | Rate, 0.1Hz to 20Hz |
 | **Fader 7** | Pulse Out 1 | Width, centre is a 50% square |
 | **Fader 8** | Pulse Out 2 | Width, centre is a 50% square |
-| **Button 1** (C2) | Audio Out 1 | Triangle LFO on/off |
-| **Button 2** (C3) | Audio Out 2 | Triangle LFO on/off |
-| **Button 3** (C4) | CV Out 1 | Triangle LFO on/off |
-| **Button 4** (C5) | CV Out 2 | Triangle LFO on/off |
+| **Button 1** (C2) | Audio Out 1 | Arm/disarm its triangle LFO |
+| **Button 2** (C3) | Audio Out 2 | Arm/disarm its triangle LFO |
+| **Button 3** (C4) | CV Out 1 | Arm/disarm its triangle LFO |
+| **Button 4** (C5) | CV Out 2 | Arm/disarm its triangle LFO |
+
+The Computer's own knobs are deliberately **not** a fallback: this card exists
+to drive the 8mu's controls, so the 8mu's faders are the only thing that sets
+the eight parameters. The one panel control that is used is the Main knob,
+which sets LFO depth (see below), and the switch, which picks the mode.
 
 The audio outputs are DC-coupled on this hardware, so they carry a steady
 voltage just as well as sound does. That is what makes four voltage outputs
 possible from two audio jacks and two CV jacks, rather than the usual two.
 None of them are calibrated, which does not matter here: this card is a source
 of control voltages, not a pitch reference.
+
+## Modes
+
+The Computer's switch picks what the card does:
+
+| Switch | Mode | Behaviour |
+|---|---|---|
+| **Middle** | Basic | Faders 1-4 are steady voltages, 5-8 pulse rate and width |
+| **Up** | LFO | Armed outputs oscillate; un-armed outputs stay steady voltages |
+| **Down** (momentary) | Basic | Held, it re-takes the four LFO centres from the fader levels |
+
+Switching back to Middle stops any oscillation, and each output glides to its
+captured centre rather than jumping.
+
+**Hold the switch down** to move all four LFO centres to wherever the faders
+currently are - the way to set a new centre by hand.
 
 ## The voltages
 
@@ -40,30 +61,35 @@ a manual voltage source you can dial in by hand.
 ## LFOs
 
 Any of the four voltage outputs can be a **triangle LFO** instead of a steady
-voltage. A tap on one of the four top buttons switches that output's LFO on or
-off.
+voltage. A tap on one of the four top buttons **arms** that output; it
+oscillates whenever the switch is Up. You can arm in Middle and flip Up to
+hear it.
 
-Switching one **on** captures the voltage the output is already sitting at and
-oscillates around it, and the fader that was setting the level now sets the
-**speed** (0.1Hz to 20Hz, exponential, the same feel as the pulse rates). So
-the move is: dial in a voltage, tap the button, and it comes alive around that
-point while your finger takes over the rate.
+Arming captures the voltage the output is already sitting at as the centre to
+oscillate around, and while it is oscillating the fader that set the level
+instead sets the **speed** (0.1Hz to 20Hz, exponential, the same feel as the
+pulse rates). So the move is: dial in a voltage, tap the button, flip Up, and
+it comes alive around that point while your finger takes over the rate.
 
-The triangle always swings the full distance to whichever supply rail is
-nearer, so a voltage set close to a rail simply moves less. It can never clip.
+A fader whose output is **not** armed is still a level even in LFO mode, so
+the card stays useful with one LFO running or none.
 
-Switching one **off** glides the output back to the captured voltage. The
-fader does not grab the level immediately, because it is sitting at a rate
-position - it stays locked until you move it to meet the captured value, so
-nothing jumps.
+**Main** sets how far the triangle swings: fully anticlockwise is no swing,
+fully clockwise is the whole distance to the nearer supply rail. Because the
+swing is measured to the rail, it scales itself down as the centre gets close
+to one - an LFO can never clip, whatever the centre and depth are. Main only
+affects armed outputs.
 
-**Holding any one of the four buttons for a second and a half stops all four
-LFOs at once.** This is the way back if the card is running without the 8mu:
-the on/off state deliberately survives the controller being unplugged, so
-without this a card left in LFO mode would have no way to stop.
+Disarming an output - by tapping its button again, or by dropping the switch
+back to Middle - glides it to its centre. The fader does not grab the level
+immediately, because it is sitting at a rate position; it stays locked until
+you move it to meet the captured value, so nothing jumps.
 
-The LFOs keep running if the 8mu is unplugged, and their rates then follow
-whatever the active panel page feeds the four left-hand parameters.
+**Holding any one of the four buttons for a second and a half disarms all four
+at once** - the quick way to stop everything.
+
+Arming survives the 8mu being unplugged; the mode is the switch's, so the card
+always has a way back to steady voltages.
 
 ## The pulses
 
@@ -88,29 +114,20 @@ produced and never a dead or stuck output. Like the voltages, the width is
 smoothed slightly, so sweeping the fader does not stretch a single pulse as it
 passes.
 
-Width is reachable only from the 8mu: the panel has six control slots and the
-card has eight parameters. Without a controller both widths stay at a plain
-50% square.
+Width comes from the 8mu alone - there is no other source for the eight
+parameters, so with no controller attached both widths hold wherever they
+were last left.
 
 Patch them into clocks, triggers, gates, or anything that wants a rhythmic
 on/off. At the bottom they are slow enough to use as an LFO; widen the pulses
 for trigger duties and narrow-shape them into gate streams.
 
-## Playing it without a controller
+## Without a controller
 
-With no 8mu attached, the three panel knobs take over, in two pages selected
-by the switch:
-
-| Switch | Main | X | Y |
-|---|---|---|---|
-| **Middle** | Audio Out 1 | Audio Out 2 | CV Out 1 |
-| **Up** | CV Out 2 | Pulse Out 1 rate | Pulse Out 2 rate |
-
-The 8mu always wins while it is connected, so the panel and the controller can
-never fight over a parameter. Unplug it and the knobs pick up from wherever
-the faders last left things, rather than jumping. The two pulse widths are not
-on the panel, so they stay at 50% while no controller is attached, and the LFO
-on/off state is kept - press and hold any top button to stop them.
+Unplug the 8mu and the outputs simply hold their last values - nothing new can
+be set, but nothing jumps either. The switch still selects the mode, so an
+armed output can still be stopped from the panel. Plug it back in and the
+faders pick up where they were.
 
 ## Panel LEDs
 
@@ -120,7 +137,7 @@ on/off state is kept - press and hold any top button to stop them.
 | 1 | Brightness follows the audio-out voltage on fader 1 |
 | 2 | Follows Pulse Out 1 |
 | 3 | Follows Pulse Out 2 |
-| 4 | Lit on the panel's second page (switch up, no 8mu) |
+| 4 | Lit in LFO mode (switch up) |
 | 5 | Brightness follows the CV-out voltage on fader 3 |
 
 ## Requirements

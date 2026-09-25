@@ -1,9 +1,9 @@
 draft: true
 Name: 8mu CV
-short-description: A Music Thing 8mu as four bipolar voltages (or triangle LFOs) and two rate/width-controlled pulses, over USB MIDI Host
+short-description: A Music Thing 8mu as four bipolar voltages (with switchable triangle LFOs) and two rate/width-controlled pulses, over USB MIDI Host
 Language: C++ (Pico SDK + ComputerCard)
 Creator: Your Name
-Version: "1.2.0"
+Version: "1.3.0"
 Status: Beta
 License: MIT
 Editor: none
@@ -19,7 +19,7 @@ date-updated: 2026-09-25
 
 uf2:
   - path: UF2/8mu_cv.uf2
-    name: 8mu CV 1.2.0
+    name: 8mu CV 1.3.0
 
 tags:
   - midi-host
@@ -40,26 +40,17 @@ summary: |
   Out 2: independent pulses from 0.1Hz to 20Hz, exponential across the fader
   so equal movements multiply the rate. Faders 7 and 8 set their widths: the
   middle is a 50% square, the way down narrows toward a sharp trigger, the way
-  up widens toward a gate that stays open nearly all the time. The width never
-  quite reaches zero or full, so a pulse is always produced.<br><br>
+  up widens toward a gate that stays open nearly all the time.<br><br>
 
-  Any of the four voltage outputs can be a triangle LFO instead. A tap on one
-  of the four top buttons captures the voltage that output is sitting at and
-  starts it oscillating around that point, with the same fader now setting the
-  speed. The triangle always reaches whichever supply rail is nearer, so it
-  never clips. Tapping again glides the output back to the captured voltage,
-  and the fader stays locked until it is moved to meet it, so nothing jumps. A
-  one-and-a-half-second hold on any top button stops all four LFOs at once.
-  The LFO on/off state deliberately survives the controller being unplugged,
-  which is why that hold exists.<br><br>
-
-  No controller is needed to play it. With no 8mu attached the three panel
-  knobs take over in two pages selected by the switch: middle gives Audio Out
-  1, Audio Out 2 and CV Out 1, and up gives CV Out 2 and the two pulse rates.
-  The two pulse widths are reachable only from the 8mu, so without a
-  controller they stay at a plain 50% square. The 8mu always wins while it is
-  connected, so the panel and controller can never fight over a parameter, and
-  unplugging it hands control back without a jump.<br><br>
+  The Computer's switch picks the mode. Middle is the basic card. Up is LFO
+  mode: a tap on a top button arms that output, capturing the voltage it is
+  already at as the centre for a triangle LFO, with the fader then setting the
+  speed. The Main knob sets how far the triangle swings, always measured to
+  the nearer supply rail, so it can never clip. An output that is not armed
+  stays a steady voltage even in LFO mode. Holding the switch down re-takes
+  all four centres from the fader levels. The three panel knobs are otherwise
+  not a fallback, since the point of the card is to drive the 8mu; unplug it
+  and the outputs hold their last values.<br><br>
 
   The card is a pure MIDI listener: it never writes to the 8mu's LEDs or
   settings, so the controller behaves exactly as it does anywhere else. It
@@ -75,27 +66,26 @@ panel:
       description: >
         Bipolar voltage from fader 1, about -5V to +5V with 0V at the middle
         of the fader. Uncalibrated. The audio outputs are DC-coupled, so this
-        carries a steady voltage as happily as sound. A tap on top button 1
-        turns it into a triangle LFO swinging around the voltage it was set
-        to, with the fader then controlling the rate.
+        carries a steady voltage as happily as sound. Top button 1 arms it as
+        a triangle LFO in LFO mode, with the fader then setting the rate.
     - id: AudioOut2
       name: Voltage 2
       type: cv
       description: >
         Bipolar voltage from fader 2, same range as Voltage 1. Top button 2
-        toggles its LFO.
+        arms its LFO.
     - id: CVOut1
       name: Voltage 3
       type: cv
       description: >
         Bipolar voltage from fader 3, same range as Voltage 1. Top button 3
-        toggles its LFO.
+        arms its LFO.
     - id: CVOut2
       name: Voltage 4
       type: cv
       description: >
         Bipolar voltage from fader 4, same range as Voltage 1. Top button 4
-        toggles its LFO.
+        arms its LFO.
     - id: PulseOut1
       name: Pulse 1
       type: pulse
@@ -113,43 +103,39 @@ panel:
 controls:
   switch:
     middle:
-      name: Page 1
+      name: Basic
       description: >
-        Without an 8mu: Main, X and Y set the levels of Audio Out 1, Audio Out
-        2 and CV Out 1.
+        Faders 1-4 are steady voltages and faders 5-8 are pulse rate and
+        width. Any output that was oscillating in LFO mode glides back to its
+        captured centre.
     up:
-      name: Page 2
+      name: LFO
       description: >
-        Without an 8mu: Main, X and Y set the level of CV Out 2 and the rates
-        of Pulse Out 1 and Pulse Out 2.
+        Outputs armed with a top button oscillate as triangle LFOs, with their
+        faders setting the rate. Outputs that are not armed stay steady
+        voltages. The Main knob sets the LFO swing depth.
     down:
-      name: (unused)
+      name: Re-capture centres
       description: >
-        The momentary position does nothing; the card reads only middle and up
-        when no controller is attached.
+        Momentary. Like Basic mode, and while it is held it re-takes all four
+        LFO centres from the current fader levels - the way to move a centre
+        by hand.
   knobs:
-    - when:
-        z: middle
-      main:
-        name: Voltage 1
-        description: Level of Audio Out 1, bipolar with 0V at the knob's centre.
+    - main:
+        name: LFO depth
+        description: >
+          How far the triangle LFOs swing, fully anticlockwise for no swing to
+          fully clockwise for the whole distance to the nearer supply rail.
+          Always measured to the rail, so an LFO can never clip. Only affects
+          outputs that are armed.
       x:
-        name: Voltage 2
-        description: Level of Audio Out 2, bipolar with 0V at the knob's centre.
+        name: (unused)
+        description: >
+          Not used: the 8mu's faders are the only source of the eight
+          parameters, since the card exists to drive the 8mu's controls.
       y:
-        name: Voltage 3
-        description: Level of CV Out 1, bipolar with 0V at the knob's centre.
-    - when:
-        z: up
-      main:
-        name: Voltage 4
-        description: Level of CV Out 2, bipolar with 0V at the knob's centre.
-      x:
-        name: Pulse 1 rate
-        description: Rate of Pulse Out 1, 0.1Hz to 20Hz, exponential.
-      y:
-        name: Pulse 2 rate
-        description: Rate of Pulse Out 2, 0.1Hz to 20Hz, exponential.
+        name: (unused)
+        description: Not used, for the same reason as X.
   leds:
     - display: list
       items:
@@ -166,8 +152,8 @@ controls:
           name: Pulse 2
           description: Follows Pulse Out 2 on and off.
         - id: LED4
-          name: Page 2
-          description: Lit on the panel's second page - switch up with no 8mu connected.
+          name: LFO mode
+          description: Lit while the switch is up, selecting LFO mode.
         - id: LED5
           name: Voltage 3
           description: Brightness follows the level of CV Out 1.
