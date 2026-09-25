@@ -10,6 +10,9 @@ Editor: none
 date-created: 2026-09-25
 date-updated: 2026-09-25
 
+contact:
+  email: joep@joep-i.nl
+
 # Vendors, unmodified and under their own MIT terms:
 #   ComputerCard.h
 #     (c) Chris Johnson
