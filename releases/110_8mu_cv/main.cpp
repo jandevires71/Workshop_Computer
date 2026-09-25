@@ -134,11 +134,11 @@ public:
 		// The other two voltage outs have no LEDs to spare, but they follow
 		// the same faders, so the panel is still a fair picture.
 		LedOn(0, mu.Connected());                                   // controller mounted
-		LedBrightness(1, (uint16_t)(Abs16(levelQ8[0]) >> 7));
+		LedBrightness(1, LevelLed(levelQ8[0]));
 		LedOn(2, (phase[0] & 0x80000000u) != 0);                    // pulse 1 following
 		LedOn(3, (phase[1] & 0x80000000u) != 0);                    // pulse 2 following
 		LedOn(4, !mu.Connected() && SwitchVal() == Switch::Up);     // panel page 2
-		LedBrightness(5, (uint16_t)(Abs16(levelQ8[2]) >> 7));
+		LedBrightness(5, LevelLed(levelQ8[2]));
 	}
 
 private:
@@ -165,8 +165,17 @@ private:
 
 	EightMU mu;
 
-	// Absolute value of a Q8 level, used only for the LED brightness.
-	static int32_t Abs16(int32_t v) { return v < 0 ? -v : v; }
+	// Brightness for a voltage-level LED: the absolute level (Q8), scaled to
+	// the 0-4095 the LEDs expect.  Clamped at 4095 because LedBrightness
+	// squares its argument, and 4096 would overflow the 16-bit product back
+	// down to zero - a fully deflected fader would put its LED out.
+	static uint16_t LevelLed(int32_t q8)
+	{
+		int32_t v = q8 < 0 ? -q8 : q8;
+		int32_t led = v >> 7;
+		if (led > 4095) led = 4095;
+		return (uint16_t)led;
+	}
 
 	void InitRateTable()
 	{
