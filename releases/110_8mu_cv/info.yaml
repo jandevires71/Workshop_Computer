@@ -1,9 +1,9 @@
 draft: true
 Name: 8mu CV
-short-description: A Music Thing 8mu as four bipolar voltages and two rate-controlled square pulses, over USB MIDI Host
+short-description: A Music Thing 8mu as four bipolar voltages (or triangle LFOs) and two rate/width-controlled pulses, over USB MIDI Host
 Language: C++ (Pico SDK + ComputerCard)
 Creator: Your Name
-Version: "1.1.0"
+Version: "1.2.0"
 Status: Beta
 License: MIT
 Editor: none
@@ -19,7 +19,7 @@ date-updated: 2026-09-25
 
 uf2:
   - path: UF2/8mu_cv.uf2
-    name: 8mu CV 1.1.0
+    name: 8mu CV 1.2.0
 
 tags:
   - midi-host
@@ -29,20 +29,29 @@ tags:
 
 summary: |
   Plug a Music Thing 8mu into the Computer's front USB-C jack and its eight
-  lefthand faders become four control voltages and two pulse streams. The
-  audio outputs are DC-coupled, so they carry steady voltages just as well as
-  sound, giving four bipolar voltage sources rather than the usual two.<br><br>
+  lefthand faders and four top buttons become four control voltages and two
+  pulse streams. The audio outputs are DC-coupled, so they carry steady
+  voltages just as well as sound, giving four bipolar voltage sources rather
+  than the usual two.<br><br>
 
   Faders 1-4 set the levels of Audio Out 1, Audio Out 2, CV Out 1 and CV Out
   2, each running from about -5V at the bottom through 0V in the middle to
   about +5V at the top. Faders 5 and 6 set the rates of Pulse Out 1 and Pulse
   Out 2: independent pulses from 0.1Hz to 20Hz, exponential across the fader
-  so equal movements multiply the rate. At the bottom they are slow enough to
-  use as an LFO, at the top they are a fast rhythmic gate. Faders 7 and 8 set
-  their widths: the middle is a 50% square, the way down narrows toward a
-  sharp trigger, the way up widens toward a gate that stays open nearly all
-  the time. The width never quite reaches zero or full, so a pulse is always
-  produced.<br><br>
+  so equal movements multiply the rate. Faders 7 and 8 set their widths: the
+  middle is a 50% square, the way down narrows toward a sharp trigger, the way
+  up widens toward a gate that stays open nearly all the time. The width never
+  quite reaches zero or full, so a pulse is always produced.<br><br>
+
+  Any of the four voltage outputs can be a triangle LFO instead. A tap on one
+  of the four top buttons captures the voltage that output is sitting at and
+  starts it oscillating around that point, with the same fader now setting the
+  speed. The triangle always reaches whichever supply rail is nearer, so it
+  never clips. Tapping again glides the output back to the captured voltage,
+  and the fader stays locked until it is moved to meet it, so nothing jumps. A
+  one-and-a-half-second hold on any top button stops all four LFOs at once.
+  The LFO on/off state deliberately survives the controller being unplugged,
+  which is why that hold exists.<br><br>
 
   No controller is needed to play it. With no 8mu attached the three panel
   knobs take over in two pages selected by the switch: middle gives Audio Out
@@ -66,19 +75,27 @@ panel:
       description: >
         Bipolar voltage from fader 1, about -5V to +5V with 0V at the middle
         of the fader. Uncalibrated. The audio outputs are DC-coupled, so this
-        carries a steady voltage as happily as sound.
+        carries a steady voltage as happily as sound. A tap on top button 1
+        turns it into a triangle LFO swinging around the voltage it was set
+        to, with the fader then controlling the rate.
     - id: AudioOut2
       name: Voltage 2
       type: cv
-      description: Bipolar voltage from fader 2, same range as Voltage 1.
+      description: >
+        Bipolar voltage from fader 2, same range as Voltage 1. Top button 2
+        toggles its LFO.
     - id: CVOut1
       name: Voltage 3
       type: cv
-      description: Bipolar voltage from fader 3, same range as Voltage 1.
+      description: >
+        Bipolar voltage from fader 3, same range as Voltage 1. Top button 3
+        toggles its LFO.
     - id: CVOut2
       name: Voltage 4
       type: cv
-      description: Bipolar voltage from fader 4, same range as Voltage 1.
+      description: >
+        Bipolar voltage from fader 4, same range as Voltage 1. Top button 4
+        toggles its LFO.
     - id: PulseOut1
       name: Pulse 1
       type: pulse
