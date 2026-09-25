@@ -1,0 +1,161 @@
+draft: true
+Name: 8mu CV
+short-description: A Music Thing 8mu as four bipolar voltages and two rate-controlled square pulses, over USB MIDI Host
+Language: C++ (Pico SDK + ComputerCard)
+Creator: Your Name
+Version: "1.0.0"
+Status: Beta
+License: MIT
+Editor: none
+date-created: 2026-09-25
+
+# Vendors, unmodified and under their own MIT terms:
+#   ComputerCard.h
+#     (c) Chris Johnson
+#   EightMU.h, which carries the rppicomidi usb_midi_host driver
+#     (c) 2026 Chris Johnson; usb_midi_host (c) 2023 rppicomidi
+# Their copyright headers are intact in those files.
+
+uf2:
+  - path: UF2/8mu_cv.uf2
+    name: 8mu CV 1.0.0
+
+tags:
+  - midi-host
+  - midi-to-cv
+  - utility
+  - lfo
+
+summary: |
+  Plug a Music Thing 8mu into the Computer's front USB-C jack and its six
+  lefthand faders become four control voltages and two square-wave pulse
+  streams. The audio outputs are DC-coupled, so they carry steady voltages
+  just as well as sound, giving four bipolar voltage sources rather than the
+  usual two.<br><br>
+
+  Faders 1-4 set the levels of Audio Out 1, Audio Out 2, CV Out 1 and CV Out
+  2, each running from about -5V at the bottom through 0V in the middle to
+  about +5V at the top. Faders 5 and 6 set the rates of Pulse Out 1 and Pulse
+  Out 2: independent 50% square waves from 0.1Hz to 20Hz, exponential across
+  the fader so equal movements multiply the rate. At the bottom they are slow
+  enough to use as an LFO, at the top they are a fast rhythmic gate.<br><br>
+
+  No controller is needed to play it. With no 8mu attached the three panel
+  knobs take over in two pages selected by the switch: middle gives Audio Out
+  1, Audio Out 2 and CV Out 1, and up gives CV Out 2 and the two pulse rates.
+  The 8mu always wins while it is connected, so the panel and controller can
+  never fight over a parameter, and unplugging it hands control back without
+  a jump.<br><br>
+
+  The card is a pure MIDI listener: it never writes to the 8mu's LEDs or
+  settings, so the controller behaves exactly as it does anywhere else. It
+  needs a Rev 1.1 or later Computer, and nothing else may be in the front USB
+  socket, because the Computer has to act as a USB host.
+
+panel:
+  inputs: []
+  outputs:
+    - id: AudioOut1
+      name: Voltage 1
+      type: cv
+      description: >
+        Bipolar voltage from fader 1, about -5V to +5V with 0V at the middle
+        of the fader. Uncalibrated. The audio outputs are DC-coupled, so this
+        carries a steady voltage as happily as sound.
+    - id: AudioOut2
+      name: Voltage 2
+      type: cv
+      description: Bipolar voltage from fader 2, same range as Voltage 1.
+    - id: CVOut1
+      name: Voltage 3
+      type: cv
+      description: Bipolar voltage from fader 3, same range as Voltage 1.
+    - id: CVOut2
+      name: Voltage 4
+      type: cv
+      description: Bipolar voltage from fader 4, same range as Voltage 1.
+    - id: PulseOut1
+      name: Pulse 1
+      type: pulse
+      description: >
+        50% duty square wave, rate set by fader 5, 0.1Hz to 20Hz with an
+        exponential response. A slow LFO at the bottom of the fader, a fast
+        rhythmic gate at the top.
+    - id: PulseOut2
+      name: Pulse 2
+      type: pulse
+      description: 50% duty square wave, rate set by fader 6, independent of Pulse 1.
+
+controls:
+  switch:
+    middle:
+      name: Page 1
+      description: >
+        Without an 8mu: Main, X and Y set the levels of Audio Out 1, Audio Out
+        2 and CV Out 1.
+    up:
+      name: Page 2
+      description: >
+        Without an 8mu: Main, X and Y set the level of CV Out 2 and the rates
+        of Pulse Out 1 and Pulse Out 2.
+    down:
+      name: (unused)
+      description: >
+        The momentary position does nothing; the card reads only middle and up
+        when no controller is attached.
+  knobs:
+    - when:
+        z: middle
+      main:
+        name: Voltage 1
+        description: Level of Audio Out 1, bipolar with 0V at the knob's centre.
+      x:
+        name: Voltage 2
+        description: Level of Audio Out 2, bipolar with 0V at the knob's centre.
+      y:
+        name: Voltage 3
+        description: Level of CV Out 1, bipolar with 0V at the knob's centre.
+    - when:
+        z: up
+      main:
+        name: Voltage 4
+        description: Level of CV Out 2, bipolar with 0V at the knob's centre.
+      x:
+        name: Pulse 1 rate
+        description: Rate of Pulse Out 1, 0.1Hz to 20Hz, exponential.
+      y:
+        name: Pulse 2 rate
+        description: Rate of Pulse Out 2, 0.1Hz to 20Hz, exponential.
+  leds:
+    - display: list
+      items:
+        - id: LED0
+          name: 8mu
+          description: Lit while a USB MIDI controller is connected.
+        - id: LED1
+          name: Voltage 1
+          description: Brightness follows the level of Audio Out 1.
+        - id: LED2
+          name: Pulse 1
+          description: Follows Pulse Out 1 on and off.
+        - id: LED3
+          name: Pulse 2
+          description: Follows Pulse Out 2 on and off.
+        - id: LED4
+          name: Page 2
+          description: Lit on the panel's second page - switch up with no 8mu connected.
+        - id: LED5
+          name: Voltage 3
+          description: Brightness follows the level of CV Out 1.
+
+host:
+  usb:
+    - name: Music Thing 8mu
+      role: midi
+      description: >
+        Class-compliant USB MIDI controller plugged into the Computer's front
+        USB-C jack. The Computer acts as USB host, which needs a Rev 1.1 or
+        later board. Factory mapping, nothing to configure on the 8mu.
+  notes: |
+    The card only listens - it never writes to the 8mu's LEDs or settings, so
+    the controller behaves exactly as it does anywhere else.
